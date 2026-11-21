@@ -32,14 +32,15 @@ def train(
     batch_size: int = 4,
     gradient_accumulation_steps: int = 4,
     learning_rate: float = 2e-4,
-    max_length: int = 768,
+    max_length: int = 512,
     lora_r: int = 16,
     lora_alpha: int = 32,
     use_4bit: bool = True,
 ):
     print("=" * 60)
     print(f"Starting QLoRA Fine-Tuning for: {model_name}")
-    print(f"Effective Batch Size: {batch_size * gradient_accumulation_steps}")
+    print(f"Per-Device Batch: {batch_size} | Grad Accum: {gradient_accumulation_steps} | Effective Batch: {batch_size * gradient_accumulation_steps}")
+    print(f"Max Sequence Length: {max_length}")
     print("=" * 60)
 
     is_cuda=torch.cuda.is_available()
@@ -69,16 +70,17 @@ def train(
 
     # 3. Load base Model
     print(f"Loading base model weights from {model_name}...")
-    model=AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         model_name, 
         quantization_config=bnb_config,
         device_map=device_map,
         dtype=compute_dtype if is_cuda else torch.float32,
+        attn_implementation="sdpa",
         trust_remote_code=True,
     )
 
     if use_4bit and is_cuda:
-        model = prepare_model_for_kbit_training(model)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 
     # 4. Configure LoRA (PEFT) across all 7 linear projections
     lora_config=LoraConfig(
@@ -106,7 +108,7 @@ def train(
 
     
     # 6. Training Arguments
-    training_args=TrainingArguments(
+    training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
@@ -124,6 +126,8 @@ def train(
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
+        gradient_checkpointing=True if is_cuda else False,
+        gradient_checkpointing_kwargs={"use_reentrant": False} if is_cuda else None,
         fp16=(is_cuda and compute_dtype == torch.float16),
         bf16=(is_cuda and compute_dtype == torch.bfloat16),
         optim="paged_adamw_8bit" if is_cuda else "adamw_torch",
@@ -157,8 +161,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="QLoRA Fine-Tuning for IELTS Writing Copilot")
     parser.add_argument("--model_name", type=str, default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--grad_accum", type=int, default=4)
+    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--grad_accum", type=int, default=8)
+    parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--use_4bit", action="store_true", default=True)
     args = parser.parse_args()
@@ -168,6 +173,7 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
+        max_length=args.max_length,
         learning_rate=args.lr,
         use_4bit=args.use_4bit,
     )
