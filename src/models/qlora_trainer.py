@@ -82,17 +82,14 @@ def train(
     if use_4bit and is_cuda:
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 
-    # 4. Configure LoRA (PEFT) across all 7 linear projections
-    lora_config=LoraConfig(
+    # 4. Configure LoRA (PEFT) targeting attention projections (Fast & Memory Efficient)
+    lora_config = LoraConfig(
         r=lora_r,
         lora_alpha=lora_alpha,
         lora_dropout=0.05,
         bias="none",
         task_type=TaskType.CAUSAL_LM,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj"
-        ],
+        target_modules=["q_proj", "v_proj"],
     )
 
     model=get_peft_model(model, lora_config)
@@ -160,9 +157,9 @@ def train(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="QLoRA Fine-Tuning for IELTS Writing Copilot")
     parser.add_argument("--model_name", type=str, default="Qwen/Qwen2.5-1.5B-Instruct")
-    parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--grad_accum", type=int, default=8)
+    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--grad_accum", type=int, default=2)
     parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--use_4bit", action="store_true", default=True)
