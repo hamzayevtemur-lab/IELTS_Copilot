@@ -73,7 +73,7 @@ def train(
         model_name, 
         quantization_config=bnb_config,
         device_map=device_map,
-        torch_dtype=compute_dtype if is_cuda else torch.float32,
+        dtype=compute_dtype if is_cuda else torch.float32,
         trust_remote_code=True,
     )
 
@@ -114,7 +114,7 @@ def train(
         gradient_accumulation_steps=gradient_accumulation_steps,
         learning_rate=learning_rate,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
+        warmup_steps=100,
         logging_steps=25,
         eval_strategy="steps",
         eval_steps=200,
