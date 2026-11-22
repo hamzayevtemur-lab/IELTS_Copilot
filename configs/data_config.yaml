@@ -1,0 +1,23 @@
+# Data Processing & Autocomplete Generation Configuration
+filtering:
+  min_band_score: 6.0
+  min_word_count: 220
+  require_terminal_punctuation: true
+
+split:
+  train_ratio: 0.80
+  val_ratio: 0.10
+  test_ratio: 0.10
+  group_by: "question"
+  random_state: 42
+
+autocomplete_generation:
+  cuts_per_essay: 5
+  min_completion_words: 8
+  max_completion_words: 30
+  cut_intervals:
+    - [0.12, 0.25]  # Introduction / thesis
+    - [0.28, 0.42]  # Body 1 main claim
+    - [0.45, 0.58]  # Body 1 evidence & transition
+    - [0.62, 0.75]  # Body 2 argument & development
+    - [0.78, 0.90]  # Conclusion summary

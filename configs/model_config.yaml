@@ -1,0 +1,16 @@
+# Model Configuration for IELTS Writing Copilot
+model:
+  name: "Qwen/Qwen2.5-1.5B-Instruct"
+  torch_dtype: "float16"
+  attn_implementation: "sdpa"
+  trust_remote_code: true
+
+inference:
+  max_new_tokens: 30
+  temperature: 0.7
+  top_p: 0.9
+  repetition_penalty: 1.1
+  system_prompt: >
+    You are an expert IELTS Writing Task 2 assistant. Given the essay prompt
+    and the draft written so far, continue the essay with a fluent, grammatically
+    accurate, and contextually relevant continuation.
