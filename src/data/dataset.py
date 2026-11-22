@@ -78,17 +78,13 @@ class IELTSAutocompleteDataset(Dataset):
         #    full_ids.append(self.tokenizer.eos_token_id)
 
         
-        input_ids = torch.tensor(full_ids, dtype=torch.long)
-        attention_mask = torch.ones_like(input_ids)
-
-        # 4. Construct labels and apply -100 masking to all prompt tokens
-        labels=input_ids.clone()
-        prompt_len=min(len(prompt_ids), len(input_ids))
-        labels[:prompt_len]= -100 # Mask out system + user prompt
+        # 4. Construct labels with -100 masking for prompt tokens
+        prompt_len = min(len(prompt_ids), len(full_ids))
+        labels = [-100] * prompt_len + full_ids[prompt_len:]
 
         return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
+            "input_ids": full_ids,
+            "attention_mask": [1] * len(full_ids),
             "labels": labels,
         }
 
@@ -124,19 +120,22 @@ if __name__=="__main__":
         max_length=512,
     )
 
-    sample = sample_dataset[0]
-    print("\n--- Smoke Test Verification ---")
-    print(f"Input IDs shape:  {sample['input_ids'].shape}")
-    print(f"Labels shape:     {sample['labels'].shape}")
+    collator = get_data_collator(tokenizer)
+    batch = collator([sample_dataset[0], sample_dataset[1]])
+
+    print("\n--- Smoke Test Verification (Collator Output) ---")
+    print(f"Batch Input IDs shape:  {batch['input_ids'].shape}")
+    print(f"Batch Labels shape:     {batch['labels'].shape}")
     
-    # Verify masking
-    masked_count = (sample['labels'] == -100).sum().item()
-    target_count = (sample['labels'] != -100).sum().item()
-    print(f"Prompt tokens masked (-100):  {masked_count}")
-    print(f"Target completion tokens:     {target_count}")
+    # Verify masking on first item in batch
+    labels_0 = batch['labels'][0]
+    masked_count = (labels_0 == -100).sum().item()
+    target_count = (labels_0 != -100).sum().item()
+    print(f"Prompt + Pad tokens masked (-100): {masked_count}")
+    print(f"Target completion tokens:          {target_count}")
 
     # Decode target tokens to verify correctness
-    target_ids = sample['labels'][sample['labels'] != -100]
+    target_ids = labels_0[labels_0 != -100]
     print(f"Decoded target text: '{tokenizer.decode(target_ids).strip()}'")
 
 
