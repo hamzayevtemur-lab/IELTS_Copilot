@@ -55,7 +55,7 @@ class IELTSInferenceEngine:
     
     def _load_model(self, use_4bit: bool):
         device_map = "auto" if self.is_cuda else None
-        compute_dtype = torch.float16 if self.is_cuda else torch.float32
+        compute_dtype = torch.float16
 
         bnb_config=None
         if use_4bit and self.is_cuda:
@@ -141,7 +141,10 @@ class IELTSInferenceEngine:
 
 if __name__ == "__main__":
     # Test local generation
-    engine = IELTSInferenceEngine(use_4bit=False)
+    engine = IELTSInferenceEngine(
+        adapter_path="checkpoints/qwen_ielts_copilot/checkpoint-200",
+        use_4bit=False,
+    )
     q = "Some people believe that university education should be free for everyone. Discuss."
     d = "Over the past few decades, the accessibility of tertiary education has sparked intense debate. Proponents argue that"
     

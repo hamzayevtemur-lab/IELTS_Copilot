@@ -65,7 +65,10 @@ def stream_autocomplete(
 
 if __name__ == "__main__":
     # Test streaming in terminal
-    engine = IELTSInferenceEngine(use_4bit=False)
+    engine = IELTSInferenceEngine(
+        adapter_path="checkpoints/qwen_ielts_copilot/checkpoint-200",
+        use_4bit=False,
+    )
 
     q = "In many countries, traditional customs are disappearing. Is this positive or negative?"
     d = "Globalization has accelerated the decline of cultural traditions. In my view, this development"

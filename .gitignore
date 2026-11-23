@@ -12,8 +12,10 @@ venv/
 ENV/
 
 # Model Checkpoints & Large Model Artifacts
-checkpoints/
-*.safetensors
+checkpoints/*
+!checkpoints/qwen_ielts_copilot/
+!checkpoints/qwen_ielts_copilot/**
+!checkpoints/qwen_ielts_copilot/**/*.safetensors
 *.bin
 *.pt
 *.pth
