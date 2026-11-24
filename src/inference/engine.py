@@ -7,7 +7,6 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
 )
-from peft import PeftModel
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -79,9 +78,12 @@ class IELTSInferenceEngine:
 
         if self.adapter_path and os.path.exists(self.adapter_path):
             print(f" Attaching fine-tuned LoRA adapter from: {self.adapter_path}...")
+            from peft import PeftModel
             model = PeftModel.from_pretrained(model, self.adapter_path)
-        else:
+        elif self.adapter_path:
             print(" Running on untuned foundation weights.")
+        else:
+            print(" Loaded standalone merged model.")
 
         model.eval()
 
