@@ -43,9 +43,9 @@ class ModelService:
         """Loads model weights into memory (called during FastAPI startup lifespan)."""
         if self.engine is None:
             print(f"[ModelService] Loading model: {self.model_name}...")
-            self.engine=IELTSInferenceEngine(
-                model_id=self.model_name,
-                use_4bit=self.use_4bit
+            self.engine = IELTSInferenceEngine(
+                model_name=self.model_name,
+                use_4bit=self.use_4bit,
             )
             print("[ModelService] Model successfully loaded and ready for requests.")
 
