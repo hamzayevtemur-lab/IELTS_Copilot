@@ -1,7 +1,9 @@
 /**
  * API service for IELTS Copilot backend.
- * Handles Server-Sent Events (SSE) streaming and health checks.
+ * Connects directly to Cloudflare Tunnel URL or localhost for real-time SSE streaming.
  */
+
+export const API_BASE = 'https://mixing-sara-sale-repair.trycloudflare.com';
 
 export async function streamAutocomplete({
   question,
@@ -14,7 +16,7 @@ export async function streamAutocomplete({
   signal,
 }) {
   try {
-    const response = await fetch('/api/autocomplete/stream', {
+    const response = await fetch(`${API_BASE}/api/autocomplete/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +79,7 @@ export async function streamAutocomplete({
 
 export async function checkBackendHealth() {
   try {
-    const res = await fetch('/health');
+    const res = await fetch(`${API_BASE}/health`);
     return await res.json();
   } catch {
     return { status: 'offline', model_loaded: false };

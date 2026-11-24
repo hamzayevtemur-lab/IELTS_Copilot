@@ -1,5 +1,6 @@
 import sys
 import json
+import threading
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -25,9 +26,10 @@ class ModelService:
         model_name: str="TemurbekHamzaev/qwen2.5-1.5b-ielts-copilot",
         use_4bit: bool=False
     ):
-        self.model_name=model_name
-        self.use_4bit=use_4bit
-        self.engine: Optional[IELTSInferenceEngine]=None
+        self.model_name = model_name
+        self.use_4bit = use_4bit
+        self.engine: Optional[IELTSInferenceEngine] = None
+        self.lock = threading.Lock()
 
     
     @classmethod
@@ -84,22 +86,20 @@ class ModelService:
         if self.engine is None:
             raise RuntimeError("ModelService is not initialized. Call initialize() first.")
 
-        token_generator=stream_autocomplete(
-            engine=self.engine,
-            question=question,
-            draft=draft, 
-            max_new_tokens=max_tokens,
-            temperature=temperature,
-        )
+        with self.lock:
+            token_generator=stream_autocomplete(
+                engine=self.engine,
+                question=question,
+                draft=draft, 
+                max_new_tokens=max_tokens,
+                temperature=temperature,
+            )
 
-        for token in token_generator:
-            # Format as standard Server-Sent Event (SSE) JSON payload
-            payload = json.dumps({"token": token})
-            yield f"data: {payload}\n\n"
+            for token in token_generator:
+                payload = json.dumps({"token": token})
+                yield f"data: {payload}\n\n"
 
-
-        # Signal completion to frontend
-        yield f"data: {json.dumps({'done': True})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
 
 
     

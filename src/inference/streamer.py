@@ -55,11 +55,12 @@ def stream_autocomplete(
     thread.start()
 
     # Stream tokens word-by-word as they emerge from the model
-    for new_text in streamer:
-        if new_text:
-            yield new_text
-
-    thread.join()
+    try:
+        for new_text in streamer:
+            if new_text:
+                yield new_text
+    finally:
+        thread.join(timeout=2.0)
 
 
 
