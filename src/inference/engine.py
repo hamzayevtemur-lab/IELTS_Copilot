@@ -28,7 +28,7 @@ class IELTSInferenceEngine:
     """
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2.5-1.5B-Instruct",
+        model_name: str = "TemurbekHamzaev/qwen2.5-1.5b-ielts-copilot",
         adapter_path: str = None,
         use_4bit: bool = True,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
@@ -140,11 +140,8 @@ class IELTSInferenceEngine:
 
 
 if __name__ == "__main__":
-    # Test local generation
-    engine = IELTSInferenceEngine(
-        adapter_path="checkpoints/qwen_ielts_copilot/checkpoint-200",
-        use_4bit=False,
-    )
+    # Test local generation directly from your Hugging Face model
+    engine = IELTSInferenceEngine(use_4bit=False)
     q = "Some people believe that university education should be free for everyone. Discuss."
     d = "Over the past few decades, the accessibility of tertiary education has sparked intense debate. Proponents argue that"
     
