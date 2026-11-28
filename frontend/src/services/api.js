@@ -3,7 +3,7 @@
  * Connects directly to Cloudflare Tunnel URL or localhost for real-time SSE streaming.
  */
 
-export const API_BASE = 'https://mixing-sara-sale-repair.trycloudflare.com';
+export const API_BASE = 'http://localhost:8000';
 
 export async function streamAutocomplete({
   question,

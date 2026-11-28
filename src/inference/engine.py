@@ -54,7 +54,13 @@ class IELTSInferenceEngine:
     
     def _load_model(self, use_4bit: bool):
         device_map = "auto" if self.is_cuda else None
-        compute_dtype = torch.float16
+        compute_dtype = torch.float16 if self.is_cuda else torch.bfloat16
+
+        if not self.is_cuda:
+            import os
+            num_threads = min(8, os.cpu_count() or 4)
+            torch.set_num_threads(num_threads)
+            print(f"Configured CPU execution: dtype={compute_dtype}, threads={num_threads}")
 
         bnb_config=None
         if use_4bit and self.is_cuda:

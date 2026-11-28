@@ -8,13 +8,14 @@ export function SuggestionBox({ suggestion, isStreaming, onAccept, onDismiss }) 
     <div className="flex items-center justify-between gap-3 px-4 py-2 bg-indigo-950/40 border border-indigo-500/30 rounded-xl text-xs text-indigo-200 backdrop-blur-sm animate-fade-in">
       <div className="flex items-center gap-2 truncate">
         <Sparkles className={`w-3.5 h-3.5 text-indigo-400 shrink-0 ${isStreaming ? 'animate-pulse text-amber-400' : ''}`} />
-        {isStreaming ? (
-          <span className="text-slate-300 italic">Thinking and continuing draft...</span>
-        ) : (
+        {suggestion ? (
           <span className="truncate text-slate-200">
             Suggestion: <span className="text-indigo-300 font-medium">"{suggestion}"</span>
+            {isStreaming && <span className="inline-block w-1.5 h-3 ml-1 bg-indigo-400 animate-pulse align-middle" />}
           </span>
-        )}
+        ) : isStreaming ? (
+          <span className="text-slate-300 italic">Thinking and continuing draft...</span>
+        ) : null}
       </div>
 
       {suggestion && (

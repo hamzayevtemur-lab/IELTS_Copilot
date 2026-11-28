@@ -1,8 +1,9 @@
 import sys
 import json
+import asyncio
 import threading
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, AsyncGenerator
 
 # Ensure project root is accessible
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -11,6 +12,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.inference.engine import IELTSInferenceEngine
 from src.inference.streamer import stream_autocomplete
+
+LOCAL_MODEL_PATH = PROJECT_ROOT / "checkpoints" / "qwen_ielts_merged"
+DEFAULT_MODEL = str(LOCAL_MODEL_PATH) if LOCAL_MODEL_PATH.exists() else "TemurbekHamzaev/qwen2.5-1.5b-ielts-copilot"
 
 
 class ModelService:
@@ -23,8 +27,8 @@ class ModelService:
 
     def __init__(
         self, 
-        model_name: str="TemurbekHamzaev/qwen2.5-1.5b-ielts-copilot",
-        use_4bit: bool=False
+        model_name: str = DEFAULT_MODEL,
+        use_4bit: bool = False
     ):
         self.model_name = model_name
         self.use_4bit = use_4bit
@@ -71,23 +75,29 @@ class ModelService:
         )
 
 
-    def stream_completion(
+    async def stream_completion(
         self, 
         question: str,
         draft: str, 
-        max_tokens: int=30,
-        temperature: float=0.7,
-    )-> Generator[str, None, None]:
+        max_tokens: int = 30,
+        temperature: float = 0.7,
+    ) -> AsyncGenerator[str, None]:
         """
         Streams newly generated tokens in real time, formatted as Server-Sent Events (SSE).
         Yields: 'data: {"token": "..."}\n\n'
         """
-
         if self.engine is None:
             raise RuntimeError("ModelService is not initialized. Call initialize() first.")
 
-        with self.lock:
-            token_generator=stream_autocomplete(
+        # Timeout acquisition prevents deadlocks if previous request was aborted by client
+        acquired = self.lock.acquire(timeout=2.0)
+        if not acquired:
+            print("[ModelService] Previous generation busy, skipping stale request")
+            yield f"data: {json.dumps({'done': True})}\n\n"
+            return
+
+        try:
+            token_generator = stream_autocomplete(
                 engine=self.engine,
                 question=question,
                 draft=draft, 
@@ -98,8 +108,18 @@ class ModelService:
             for token in token_generator:
                 payload = json.dumps({"token": token})
                 yield f"data: {payload}\n\n"
+                await asyncio.sleep(0.001)  # Flush network buffer and yield to event loop
 
             yield f"data: {json.dumps({'done': True})}\n\n"
+        except GeneratorExit:
+            # Client aborted or disconnected - exit cleanly
+            pass
+        except Exception as e:
+            print(f"[ModelService] Stream exception: {e}")
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        finally:
+            if self.lock.locked():
+                self.lock.release()
 
 
     
